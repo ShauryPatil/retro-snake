@@ -1,0 +1,558 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#11120f">
+<title>Pixel-Boy | Retro Snake</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 18px;
+  background: #171914;
+  color: #d7f7a1;
+  font-family: monospace;
+}
+
+.console {
+  width: 100%;
+  max-width: 440px;
+  padding: 16px;
+  border: 3px solid #56633b;
+  border-radius: 18px;
+  background: #11120f;
+  box-shadow: 0 15px 50px #0008;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 23px;
+  letter-spacing: 2px;
+}
+
+h1 span { color: #f4a261; }
+
+.subtitle {
+  margin: 5px 0 0;
+  font-size: 10px;
+  color: #94a57b;
+  letter-spacing: 2px;
+}
+
+.power {
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.screen {
+  padding: 10px;
+  border-radius: 12px;
+  background: #526344;
+}
+
+.screen-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 2px 8px;
+  font-size: 10px;
+  color: #e1edbd;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 1;
+  height: auto;
+  margin: auto;
+  background: #c4d6a0;
+  border: 3px solid #24321f;
+  image-rendering: pixelated;
+  touch-action: none;
+}
+
+.score-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 5px;
+  padding: 10px 2px 0;
+  color: #182516;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0 14px;
+}
+
+.control-label {
+  margin: 0 0 8px;
+  color: #94a57b;
+  font-size: 10px;
+}
+
+.dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 42px);
+  gap: 5px;
+}
+
+button {
+  font-family: monospace;
+  font-weight: bold;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+}
+
+.dpad button {
+  height: 42px;
+  border: 1px solid #56633b;
+  border-radius: 6px;
+  background: #292d23;
+  color: #d7f7a1;
+  font-size: 17px;
+}
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.round {
+  width: 48px;
+  height: 48px;
+  border: 2px solid #e47b6d;
+  border-radius: 50%;
+  background: #a7433f;
+  color: white;
+  font-size: 16px;
+}
+
+.round:first-child { margin-top: -22px; }
+
+.menu {
+  display: flex;
+  gap: 8px;
+}
+
+.menu button {
+  padding: 12px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+#start {
+  flex: 1;
+  border: none;
+  background: #d7f7a1;
+  color: #182516;
+}
+
+#restart {
+  border: 1px solid #56633b;
+  background: #292d23;
+  color: #d7f7a1;
+}
+
+button:active {
+  filter: brightness(1.4);
+  transform: scale(.96);
+}
+
+.help {
+  margin: 13px 0 0;
+  border-top: 1px solid #3c4930;
+  padding-top: 10px;
+  color: #94a57b;
+  text-align: center;
+  font-size: 10px;
+  line-height: 1.9;
+}
+
+@media (max-width: 360px) {
+  .console { padding: 10px; }
+  .dpad { grid-template-columns: repeat(3, 36px); }
+  .dpad button { height: 38px; }
+  .action-buttons { gap: 7px; }
+  .round { width: 42px; height: 42px; }
+}
+</style>
+</head>
+
+<body>
+<main class="console">
+  <header class="header">
+    <div>
+      <h1>PIXEL<span>-BOY</span></h1>
+      <p class="subtitle">POCKET ARCADE SYSTEM</p>
+    </div>
+    <div class="power">● POWER ON</div>
+  </header>
+
+  <section class="screen">
+    <div class="screen-label">
+      <span>DOT MATRIX DISPLAY</span>
+      <span id="status">READY</span>
+    </div>
+
+    <canvas id="game" width="320" height="320"></canvas>
+
+    <div class="score-row">
+      <span>SCORE: <b id="score">000</b></span>
+      <span>BEST: <b id="best">000</b></span>
+    </div>
+  </section>
+
+  <section class="controls">
+    <div>
+      <p class="control-label">D-PAD</p>
+      <div class="dpad">
+        <span></span>
+        <button data-dir="up" aria-label="Up">▲</button>
+        <span></span>
+        <button data-dir="left" aria-label="Left">◀</button>
+        <button data-dir="down" aria-label="Down">▼</button>
+        <button data-dir="right" aria-label="Right">▶</button>
+      </div>
+    </div>
+
+    <div class="action-buttons">
+      <button class="round" id="pause" aria-label="Pause">B</button>
+      <button class="round" id="startButton" aria-label="Start">A</button>
+    </div>
+  </section>
+
+  <div class="menu">
+    <button id="start">START / RESUME</button>
+    <button id="restart">RESTART</button>
+  </div>
+
+  <p class="help">
+    WALLS WRAP AROUND · EAT FRUIT · AVOID YOUR TAIL<br>
+    ARROW KEYS / WASD TO MOVE · SPACE TO PAUSE
+  </p>
+</main>
+
+<script>
+(() => {
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+  const SIZE = 20;
+  const CELL = 16;
+
+  const scoreDisplay = document.getElementById("score");
+  const bestDisplay = document.getElementById("best");
+  const status = document.getElementById("status");
+
+  let snake, food, direction, nextDirection;
+  let score = 0;
+  let best = 0;
+  let running = false;
+  let paused = false;
+  let gameOver = false;
+  let timer = null;
+
+  try {
+    best = Number(localStorage.getItem("pixelBoyBest")) || 0;
+  } catch (_) {}
+
+  bestDisplay.textContent = String(best).padStart(3, "0");
+
+  function spawnFood() {
+    let position;
+
+    do {
+      position = {
+        x: Math.floor(Math.random() * SIZE),
+        y: Math.floor(Math.random() * SIZE)
+      };
+    } while (
+      snake.some(part =>
+        part.x === position.x && part.y === position.y
+      )
+    );
+
+    return position;
+  }
+
+  function draw() {
+    ctx.fillStyle = "#c4d6a0";
+    ctx.fillRect(0, 0, 320, 320);
+
+    // Pixel background
+    ctx.fillStyle = "rgba(50,70,39,0.07)";
+
+    for (let x = 0; x < SIZE; x++) {
+      for (let y = 0; y < SIZE; y++) {
+        if ((x + y) % 2 === 0) {
+          ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
+        }
+      }
+    }
+
+    // Fruit
+    ctx.fillStyle = "#9d3835";
+    ctx.fillRect(
+      food.x * CELL + 3,
+      food.y * CELL + 3,
+      10,
+      10
+    );
+
+    ctx.fillStyle = "#e4a45d";
+    ctx.fillRect(food.x * CELL + 6, food.y * CELL + 1, 4, 4);
+
+    // Snake
+    snake.forEach((part, index) => {
+      ctx.fillStyle = index === 0 ? "#24321f" : "#3d5935";
+
+      ctx.fillRect(
+        part.x * CELL + 1,
+        part.y * CELL + 1,
+        CELL - 2,
+        CELL - 2
+      );
+
+      if (index === 0) {
+        ctx.fillStyle = "#c4d6a0";
+        ctx.fillRect(part.x * CELL + 4, part.y * CELL + 4, 3, 3);
+        ctx.fillRect(part.x * CELL + 10, part.y * CELL + 4, 3, 3);
+      }
+    });
+
+    if (!running || paused) {
+      ctx.fillStyle = "rgba(24,37,22,0.85)";
+      ctx.fillRect(24, 116, 272, 88);
+
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#d7f7a1";
+      ctx.font = "bold 17px monospace";
+
+      ctx.fillText(
+        gameOver ? "GAME OVER" :
+        paused ? "PAUSED" : "WRAP SNAKE",
+        160, 150
+      );
+
+      ctx.font = "11px monospace";
+      ctx.fillText(
+        gameOver ? "PRESS RESTART TO PLAY" :
+        paused ? "PRESS RESUME TO CONTINUE" :
+        "WALLS ARE PORTALS!",
+        160, 176
+      );
+
+      ctx.textAlign = "left";
+    }
+  }
+
+  function reset() {
+    clearInterval(timer);
+
+    snake = [
+      { x: 9, y: 10 },
+      { x: 8, y: 10 },
+      { x: 7, y: 10 }
+    ];
+
+    direction = { x: 1, y: 0 };
+    nextDirection = { x: 1, y: 0 };
+    score = 0;
+    food = spawnFood();
+
+    running = false;
+    paused = false;
+    gameOver = false;
+
+    scoreDisplay.textContent = "000";
+    status.textContent = "READY";
+
+    draw();
+  }
+
+  function tick() {
+    if (!running || paused || gameOver) return;
+
+    direction = nextDirection;
+
+    // WRAPAROUND WALLS:
+    // Going past an edge returns the snake on the opposite edge.
+    const head = {
+      x: (snake[0].x + direction.x + SIZE) % SIZE,
+      y: (snake[0].y + direction.y + SIZE) % SIZE
+    };
+
+    const eating =
+      head.x === food.x && head.y === food.y;
+
+    // Collision with the snake's own body.
+    // The tail may move away on this turn if no fruit is eaten.
+    const bodyToCheck = eating
+      ? snake
+      : snake.slice(0, -1);
+
+    if (bodyToCheck.some(part =>
+      part.x === head.x && part.y === head.y
+    )) {
+      running = false;
+      gameOver = true;
+      status.textContent = "GAME OVER";
+      draw();
+      return;
+    }
+
+    snake.unshift(head);
+
+    if (eating) {
+      score += 10;
+      scoreDisplay.textContent = String(score).padStart(3, "0");
+
+      if (score > best) {
+        best = score;
+        bestDisplay.textContent = String(best).padStart(3, "0");
+
+        try {
+          localStorage.setItem("pixelBoyBest", best);
+        } catch (_) {}
+      }
+
+      food = spawnFood();
+    } else {
+      snake.pop();
+    }
+
+    draw();
+  }
+
+  function start() {
+    if (gameOver) reset();
+
+    running = true;
+    paused = false;
+    status.textContent = "PLAYING";
+
+    clearInterval(timer);
+    timer = setInterval(tick, 125);
+
+    draw();
+  }
+
+  function togglePause() {
+    if (gameOver) return;
+
+    if (!running) {
+      start();
+      return;
+    }
+
+    paused = !paused;
+    status.textContent = paused ? "PAUSED" : "PLAYING";
+    draw();
+  }
+
+  function changeDirection(newDirection) {
+    if (gameOver) return;
+
+    if (
+      newDirection.x === -direction.x &&
+      newDirection.y === -direction.y
+    ) {
+      return;
+    }
+
+    nextDirection = newDirection;
+
+    if (!running) start();
+  }
+
+  const directions = {
+    up:    { x: 0, y: -1 },
+    down:  { x: 0, y: 1 },
+    left:  { x: -1, y: 0 },
+    right: { x: 1, y: 0 }
+  };
+
+  document.querySelectorAll("[data-dir]").forEach(button => {
+    button.addEventListener("click", () => {
+      changeDirection(directions[button.dataset.dir]);
+    });
+  });
+
+  document.getElementById("start").addEventListener("click", start);
+  document.getElementById("startButton").addEventListener("click", start);
+  document.getElementById("restart").addEventListener("click", reset);
+  document.getElementById("pause").addEventListener("click", togglePause);
+
+  document.addEventListener("keydown", event => {
+    const key = event.key.toLowerCase();
+
+    const keyMap = {
+      arrowup: "up",
+      w: "up",
+      arrowdown: "down",
+      s: "down",
+      arrowleft: "left",
+      a: "left",
+      arrowright: "right",
+      d: "right"
+    };
+
+    if (keyMap[key]) {
+      event.preventDefault();
+      changeDirection(directions[keyMap[key]]);
+    } else if (key === " ") {
+      event.preventDefault();
+      togglePause();
+    }
+  });
+
+  // Swipe controls for phones
+  let touchX = 0;
+  let touchY = 0;
+
+  canvas.addEventListener("touchstart", event => {
+    touchX = event.changedTouches[0].clientX;
+    touchY = event.changedTouches[0].clientY;
+  }, { passive: true });
+
+  canvas.addEventListener("touchend", event => {
+    const dx = event.changedTouches[0].clientX - touchX;
+    const dy = event.changedTouches[0].clientY - touchY;
+
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 18) return;
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+      changeDirection(dx > 0 ? directions.right : directions.left);
+    } else {
+      changeDirection(dy > 0 ? directions.down : directions.up);
+    }
+  }, { passive: true });
+
+  reset();
+})();
+</script>
+</body>
+  </html>
+  
